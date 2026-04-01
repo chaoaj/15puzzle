@@ -4,10 +4,11 @@ let emptyPos = { x: 3, y: 3 };
 let dragStartX, dragStartY;
 let isDragging = false;
 
-function setup() {
-  createCanvas(windowWidth > windowHeight ? windowWidth : windowHeight);
-  tileSize = floor((width - 20) / 4);
 
+function setup() {
+  let size = min(windowWidth, windowHeight);
+  createCanvas(size, size);
+  tileSize = floor((size - 20) / 4);
   initGrid();
   shuffleTiles();
 }
@@ -47,11 +48,6 @@ function draw() {
     text("YOU WON!", width / 2, height / 2 - 40);
     textSize(18);
     text("Tap to play again", width / 2, height / 2 + 10);
-
-    if (mouseIsPressed || touchIsPressed) {
-      initGrid();
-      shuffleTiles();
-    }
     return;
   }
 
@@ -85,13 +81,36 @@ function draw() {
   rect(ex, ey, tileSize, tileSize, 8);
 }
 
-function windowResized() {
-  if (windowWidth > windowHeight) {
-    resizeCanvas(windowHeight, windowHeight);
-  } else {
-    resizeCanvas(windowWidth, windowWidth);
+function mousePressed() {
+  // If won, restart on click/tap
+  if (checkWin()) {
+    initGrid();
+    shuffleTiles();
+    return;
   }
-  tileSize = floor((width - 20) / 4);
+  // Calculate grid position from mouse
+  let gridX = floor((mouseX - (width/2 - tileSize*2 + 6)) / tileSize);
+  let gridY = floor((mouseY - 70) / tileSize);
+  if (gridX < 0 || gridX > 3 || gridY < 0 || gridY > 3) return;
+  // Check if clicked tile is adjacent to empty
+  if (isAdjacent(gridX, gridY, emptyPos.x, emptyPos.y)) {
+    swapTile(emptyPos.x, emptyPos.y, gridX, gridY);
+  }
+}
+
+function touchStarted() {
+  mousePressed();
+  return false; // prevent default
+}
+
+function isAdjacent(x1, y1, x2, y2) {
+  return (Math.abs(x1 - x2) + Math.abs(y1 - y2)) === 1;
+}
+
+function windowResized() {
+  let size = min(windowWidth, windowHeight);
+  resizeCanvas(size, size);
+  tileSize = floor((size - 20) / 4);
 }
 
 // Initialize grid with solved state
@@ -163,3 +182,7 @@ function checkWin() {
       if (grid[row][col] !== expectedValue) {
         return false;
       }
+    }
+  }
+  return true;
+}
